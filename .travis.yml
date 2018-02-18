@@ -58,14 +58,77 @@ jobs:
   include:
   - after_success:
     - mvn clean cobertura:cobertura coveralls:report -P coveralls.io
-    jdk: oraclejdk8
-    script: mvn -q install
-    stage: test
-  - env: JAVADOC=true
+    before_cache:
+    - rm -rf $HOME/CACHE; find $TRAVIS_BUILD_DIR -name .ekstazi | while read line;
+      do du -sh $line;         DIR=$(dirname $HOME/CACHE$line); mkdir -p $DIR; cp
+      -r $line $DIR; done
+    - echo CACHESIZE $(du -sk $HOME/CACHE)
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    before_script:
+    - find $TRAVIS_BUILD_DIR -name .ekstazi | while read line; do rm -rf $line; done
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
+    cache:
+      directories:
+      - $HOME/CACHE
     jdk: oraclejdk8
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
+    - mvn -q install
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
+    stage: test
+  - before_cache:
+    - rm -rf $HOME/CACHE; find $TRAVIS_BUILD_DIR -name .ekstazi | while read line;
+      do du -sh $line;         DIR=$(dirname $HOME/CACHE$line); mkdir -p $DIR; cp
+      -r $line $DIR; done
+    - echo CACHESIZE $(du -sk $HOME/CACHE)
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    before_script:
+    - find $TRAVIS_BUILD_DIR -name .ekstazi | while read line; do rm -rf $line; done
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
+    cache:
+      directories:
+      - $HOME/CACHE
+    env: JAVADOC=true
+    jdk: oraclejdk8
+    script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - mvn clean install -DskipTests=true
     - mvn javadoc:aggregate
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
   - android:
       components:
       - tools
@@ -74,11 +137,35 @@ jobs:
       - build-tools-26.0.0
       - android-21
       - sys-img-armeabi-v7a-android-21
+    before_cache:
+    - rm -rf $HOME/CACHE; find $TRAVIS_BUILD_DIR -name .ekstazi | while read line;
+      do du -sh $line;         DIR=$(dirname $HOME/CACHE$line); mkdir -p $DIR; cp
+      -r $line $DIR; done
+    - echo CACHESIZE $(du -sk $HOME/CACHE)
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
     before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
     - echo no | android create avd --force -n test -t android-21 --abi armeabi-v7a
     - emulator -avd test -no-skin -no-audio -no-window &
     before_script:
+    - find $TRAVIS_BUILD_DIR -name .ekstazi | while read line; do rm -rf $line; done
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
     - android-wait-for-emulator
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
+    cache:
+      directories:
+      - $HOME/CACHE
     env: ANDROID_EXAMPLES=true
     install:
     - mvn -q install --also-make --projects android,picocontainer -DskipTests=true
@@ -86,16 +173,52 @@ jobs:
     jdk: oraclejdk8
     language: android
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - mvn install --activate-profiles android-examples --projects examples/android
       --also-make-dependents -Dandroid.device=test
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
   - true:
       repo: cucumber/cucumber-jvm
-    jdk: oraclejdk8
+    stage: deploy
+    before_cache:
+    - rm -rf $HOME/CACHE; find $TRAVIS_BUILD_DIR -name .ekstazi | while read line;
+      do du -sh $line;         DIR=$(dirname $HOME/CACHE$line); mkdir -p $DIR; cp
+      -r $line $DIR; done
+    - echo CACHESIZE $(du -sk $HOME/CACHE)
+    - cp /tmp/classpathFile $HOME/CACHE/classpathFile
     script:
+    - touch /tmp/NOW
+    - echo GIBSTUDYSTART $(date)
     - ./continuous-deployment/before-deploy.sh
     - ./continuous-deployment/deploy.sh
     - ./continuous-deployment/upload-api-docs.sh
-    stage: deploy
+    - echo GIBSTUDYEND $(date)
+    - cd $TRAVIS_BUILD_DIR
+    - echo TESTNUM $(find . -name TEST-*.xml -newer /tmp/NOW | wc -l)
+    jdk: oraclejdk8
+    cache:
+      directories:
+      - $HOME/CACHE
+    before_install:
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];        then sed -i '' 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        else sed -i 's/<gib.enabled>true/<gib.enabled>false/'
+      $TRAVIS_BUILD_DIR/pom.xml;        fi
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    before_script:
+    - find $TRAVIS_BUILD_DIR -name .ekstazi | while read line; do rm -rf $line; done
+    - find $HOME/CACHE -name .ekstazi | while read line; do du -sh $line;         DIR=$(dirname
+      ${line#$HOME/CACHE}); if [[ -d ${DIR#.ekstazi/} ]]; then cp -r $line $DIR; fi;
+      done
+    - if [ "$TRAVIS_OS_NAME" == "osx" ];    then sed -i '' 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    else sed -i 's/<gib.enabled>false/<gib.enabled>true/'
+      $TRAVIS_BUILD_DIR/pom.xml;    fi
+    - if [[ -e $HOME/CACHE/classpathFile ]]; then cp $HOME/CACHE/classpathFile /tmp/;
+      fi
 language: java
 script:
 - touch /tmp/NOW
